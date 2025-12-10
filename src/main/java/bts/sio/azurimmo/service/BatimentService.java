@@ -5,6 +5,7 @@ import java.util.Optional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import bts.sio.azurimmo.model.Batiment;
 import bts.sio.azurimmo.model.dto.BatimentDTO;
 import bts.sio.azurimmo.model.mapper.BatimentMapper;
 import bts.sio.azurimmo.repository.BatimentRepository;
@@ -27,5 +28,11 @@ public class BatimentService {
 		return batimentRepository.findById(id)
 				 .map(BatimentMapper::toDTO);
 				 }
+	public BatimentDTO saveBatimentDTO(BatimentDTO dto) {
+		 Batiment entity = BatimentMapper.toEntity(dto);
+		 Batiment saved = batimentRepository.save(entity);
+		 return BatimentMapper.toDTO(saved);
+		 }
+
 
 }
