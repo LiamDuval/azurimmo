@@ -4,6 +4,8 @@ import java.util.List;
 
 import org.springframework.stereotype.Service;
 import bts.sio.azurimmo.model.Appartement;
+import bts.sio.azurimmo.model.dto.AppartementDTO;
+import bts.sio.azurimmo.model.mapper.AppartementMapper;
 import bts.sio.azurimmo.repository.AppartementRepository;
 import lombok.Data;
 
@@ -29,5 +31,12 @@ public class AppartementService {
 	public List<Appartement> findBySurfaceGreaterThan(float surface){
 	return appartementRepository.findBySurfaceGreaterThan(surface);
 	}
+	
+	
+	public AppartementDTO saveAppartementDTO(AppartementDTO dto) {
+		Appartement entity = AppartementMapper.toEntity(dto);
+		Appartement saved = appartementRepository.save(entity);
+		 return AppartementMapper.toDTO(saved);
+		 }
 }
 
