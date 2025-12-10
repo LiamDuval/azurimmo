@@ -9,6 +9,8 @@ import java.util.Optional;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -35,4 +37,11 @@ public class BatimentController {
 	  .map(ResponseEntity::ok) // batiment trouvé → 200
 	  .orElse(ResponseEntity.notFound().build()); // pas trouvé → 404
 	 }
+	 
+	 @PostMapping("/")
+	 public ResponseEntity<BatimentDTO> createBatiment(@RequestBody BatimentDTO dto) {
+	 BatimentDTO savedDTO = batimentService.saveBatimentDTO(dto);
+	 return ResponseEntity.status(201).body(savedDTO); // 201 Created
+	 }
+
 }
