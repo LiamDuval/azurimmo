@@ -31,6 +31,10 @@ public class Appartement {
 	
 	 @Column(name="description")
 	 private String description;
+	 
+	 @Column(name="numero")
+	 private String Numero;
+
 
 }
 
