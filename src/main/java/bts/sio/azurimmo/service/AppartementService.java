@@ -16,6 +16,9 @@ import lombok.Data;
 public class AppartementService {
 
 	private final AppartementRepository appartementRepository;
+	
+	
+	
 	public Appartement saveAppartement(Appartement appartement) {
 		Appartement savedAppartement = appartementRepository.save(appartement);
 		return savedAppartement; 
