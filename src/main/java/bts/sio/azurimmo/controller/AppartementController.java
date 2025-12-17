@@ -28,9 +28,6 @@ public class AppartementController {
 	 return ResponseEntity.status(201).body(savedDTO); // 201 Created
 	 }
  		
-
-
-
  	
 	 @GetMapping("/ville/{ville}")
 	 @Operation(summary = "Trouver les appartements par ville")
