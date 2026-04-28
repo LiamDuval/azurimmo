@@ -1,51 +1,44 @@
 import React, { useEffect, useState } from "react";
 import "./InterventionPage.css";
-
-
+ 
+const API_BASE = import.meta.env.VITE_API_BASE;
+ 
 interface Intervention {
   id: number;
   libelle: string;
   description: string;
-  dateEtHeure: string; 
+  dateEtHeure: string;
 }
-
-
+ 
 interface InterventionPageProps {
-  appartementId?: number; 
+  appartementId?: number;
 }
-
+ 
 const InterventionPage: React.FC<InterventionPageProps> = ({
   appartementId = 1,
 }) => {
-
   const [interventions, setInterventions] = useState<Intervention[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-
-
+ 
   useEffect(() => {
     setLoading(true);
     setError(null);
-
-    fetch(`http://localhost:9008/api/interventions/appartement/${appartementId}`)
+ 
+    fetch(`${API_BASE}/interventions/appartement/${appartementId}`)
       .then((response) => {
-
         if (!response.ok) {
           throw new Error(`Erreur HTTP : ${response.status}`);
         }
-
         return response.json();
       })
       .then((data: Intervention[]) => {
-
         setInterventions(data);
         setLoading(false);
       })
       .catch((err: Error) => {
-
         setError(err.message);
         setLoading(false);
-
         setInterventions([
           { id: 1, libelle: "Plomberie", description: "Fuite robinet salle de bain", dateEtHeure: "2026-03-24 09:00" },
           { id: 2, libelle: "Électricité", description: "Remplacement tableau électrique", dateEtHeure: "2026-03-25 14:30" },

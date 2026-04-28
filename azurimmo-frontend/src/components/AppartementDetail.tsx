@@ -2,35 +2,39 @@ import { useEffect, useState } from "react";
 import type { Appartement } from "../types/index";
 import "../components.css";
 import "./AppartementDetail.css";
+ 
 
-// Ajout de onShowContrats dans l'interface Props
+const API_BASE = import.meta.env.VITE_API_BASE;
+ 
 interface Props {
   appartementId: number;
   onBack: () => void;
   onShowInterventions: (id: number) => void;
-  onShowContrats: (id: number) => void; // ✅ AJOUT
+  onShowContrats: (id: number) => void;
 }
-
+ 
 export default function AppartementDetail({ appartementId, onBack, onShowInterventions, onShowContrats }: Props) {
   const [apt, setApt] = useState<Appartement | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
+ 
   useEffect(() => {
     const fetchDetail = async () => {
       setLoading(true);
       setError(null);
       try {
-        const res = await fetch(`http://localhost:9008/api/appartements/${appartementId}`);
+
+        const res = await fetch(`${API_BASE}/appartements/${appartementId}`);
         if (!res.ok) throw new Error(`Erreur HTTP: ${res.status}`);
         const data: Appartement = await res.json();
         setApt(data);
       } catch (e: unknown) {
-        setError(e instanceof Error ? e.message : "Erreur inconnue");
+        setError(e instanceof Error ? e.message : 'Erreur inconnue');
       } finally {
         setLoading(false);
       }
     };
+ 
     fetchDetail();
   }, [appartementId]);
 

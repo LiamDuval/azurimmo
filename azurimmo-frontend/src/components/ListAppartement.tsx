@@ -1,46 +1,46 @@
 import { useEffect, useState } from "react";
 import FilterBar, { type SortOption } from "./FilterBar";
 import "./ListAppartement.css";
-
-// ✅ Interface Batiment — correspond exactement aux colonnes SQL
+ 
+const API_BASE = import.meta.env.VITE_API_BASE;
+ 
 interface Batiment {
   id: number;
-  nom: string;      // colonne "nom" dans la table batiment
-  adresse: string;  // colonne "adresse"
-  ville: string;    // colonne "ville"
+  nom: string;
+  adresse: string;
+  ville: string;
 }
-
-// ✅ Interface Appartement — correspond exactement aux colonnes SQL
+ 
 interface Appartement {
   id: number;
-  numero: string;         // colonne "numero"
-  surface: number;        // colonne "surface"
-  nombreDePiece: number;  // Spring convertit "nombre_de_piece" → "nombreDePiece"
-  description: string;    // colonne "description"
-  batiment: Batiment;     // objet lié via batiment_id
+  numero: string;
+  surface: number;
+  nombreDePiece: number;
+  description: string;
+  batiment: Batiment;
 }
-
+ 
 interface FilterValues {
   search: string;
   minSurface: string;
   sortBy: SortOption;
 }
-
+ 
 interface Props {
   onSelectAppartement: (id: number) => void;
 }
-
+ 
 export default function ListAppartement({ onSelectAppartement }: Props) {
   const [data, setData] = useState<Appartement[]>([]);
   const [filtered, setFiltered] = useState<Appartement[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-
+ 
   const fetchData = async () => {
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch("http://localhost:9008/api/appartements/");
+      const response = await fetch(`${API_BASE}/appartements/`);
       if (!response.ok) throw new Error(`Erreur HTTP: ${response.status}`);
       const result: Appartement[] = await response.json();
       setData(result);
@@ -52,7 +52,7 @@ export default function ListAppartement({ onSelectAppartement }: Props) {
       setLoading(false);
     }
   };
-
+ 
   useEffect(() => {
     fetchData();
   }, []);

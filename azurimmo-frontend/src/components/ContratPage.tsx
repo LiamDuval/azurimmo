@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 import "./ContratPage.css";
+ 
+const API_BASE = import.meta.env.VITE_API_BASE;
 
 interface Contrat {
   id: number;
@@ -11,28 +13,23 @@ interface Contrat {
   appartementId: number;
   locataireId: number;
 }
-
+ 
 interface Props {
   appartementId: number;
   onBack: () => void;
 }
-
+ 
 export default function ContratPage({ appartementId, onBack }: Props) {
-
   const [contrats, setContrats] = useState<Contrat[]>([]);
-
   const [loading, setLoading] = useState<boolean>(true);
-
   const [error, setError] = useState<string | null>(null);
-
+ 
   useEffect(() => {
     const fetchContrats = async () => {
       setLoading(true);
       setError(null);
       try {
-        const res = await fetch(
-          `http://localhost:9008/api/contrats/appartement/${appartementId}`
-        );
+        const res = await fetch(`${API_BASE}/contrats/appartement/${appartementId}`);
         if (!res.ok) throw new Error(`Erreur HTTP : ${res.status}`);
         const data: Contrat[] = await res.json();
         setContrats(data);
@@ -43,7 +40,7 @@ export default function ContratPage({ appartementId, onBack }: Props) {
         setLoading(false);
       }
     };
-
+ 
     fetchContrats();
   }, [appartementId]); 
   const formatDate = (dateStr: string) => {

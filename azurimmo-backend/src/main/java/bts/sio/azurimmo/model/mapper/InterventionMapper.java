@@ -1,6 +1,5 @@
 package bts.sio.azurimmo.model.mapper;
 
-import bts.sio.azurimmo.model.Appartement;
 import bts.sio.azurimmo.model.Intervention;
 import bts.sio.azurimmo.model.dto.InterventionDTO;
 
