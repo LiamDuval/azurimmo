@@ -1,0 +1,65 @@
+/* =========================================
+   DESIGN TOKENS — variables.css
+   À importer EN PREMIER dans main.tsx :
+   import './variables.css'
+   import './index.css'
+   import './components.css'
+   etc.
+========================================= */
+
+:root {
+  /* ── Couleurs azur ───────────────────── */
+  --azure-deep:   #0077B6;   /* bleu foncé principal   */
+  --azure-mid:    #0096C7;   /* bleu moyen             */
+  --azure-light:  #48CAE4;   /* bleu clair / accent    */
+  --azure-pale:   #90E0EF;   /* très pâle              */
+  --azure-frost:  #EBF7FB;   /* fond légèrement teinté */
+
+  /* ── Neutres ────────────────────────── */
+  --white:        #FFFFFF;
+  --off-white:    #F8FAFF;
+  --border:       #E2ECF4;
+  --text-dark:    #0D1B2A;
+  --text-mid:     #3D5468;
+  --text-muted:   #8A9BB0;
+
+  /* ── Gradients ──────────────────────── */
+  --gradient-hero: linear-gradient(135deg, #023E8A 0%, #0096C7 55%, #48CAE4 100%);
+
+  /* ── Ombres ─────────────────────────── */
+  --shadow-soft:  0 2px 12px rgba(0, 119, 182, 0.07);
+  --shadow-card:  0 8px 32px rgba(0, 119, 182, 0.13);
+  --shadow-hover: 0 16px 48px rgba(0, 119, 182, 0.2);
+
+  /* ── Typographie ────────────────────── */
+  font-family: 'DM Sans', system-ui, sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+  color: var(--text-dark);
+  background-color: var(--off-white);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ── Reset & base ───────────────────── */
+*, *::before, *::after { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: var(--off-white);
+  display: block; /* override Vite template "place-items:center" */
+}
+
+button {
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-family: inherit;
+  padding: 0;
+}
+
+a { text-decoration: none; color: inherit; }
+
+/* ── Google Fonts import ────────────── */
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=Playfair+Display:wght@600;700&display=swap');

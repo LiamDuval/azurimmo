@@ -1,0 +1,65 @@
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=DM+Sans:wght@300;400;500;600&display=swap');
+
+:root {
+  --azure-deep: #0077B6;
+  --azure-mid: #0096C7;
+  --azure-light: #48CAE4;
+  --azure-pale: #ADE8F4;
+  --azure-frost: #CAF0F8;
+  --white: #FFFFFF;
+  --off-white: #F8FAFF;
+  --text-dark: #0A1628;
+  --text-mid: #2D4A6E;
+  --text-muted: #6B8CAE;
+  --border: rgba(0, 119, 182, 0.15);
+  --shadow-soft: 0 4px 24px rgba(0, 119, 182, 0.08);
+  --shadow-card: 0 8px 40px rgba(0, 119, 182, 0.12);
+  --shadow-hover: 0 20px 60px rgba(0, 119, 182, 0.2);
+  --gradient-hero: linear-gradient(135deg, #0A1628 0%, #0077B6 60%, #0096C7 100%);
+  --gradient-card: linear-gradient(160deg, #ffffff 0%, #f0f8ff 100%);
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: var(--off-white);
+  color: var(--text-dark);
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+h1, h2, h3 {
+  font-family: 'Playfair Display', serif;
+}
+
+button {
+  font-family: 'DM Sans', sans-serif;
+  cursor: pointer;
+  border: none;
+  outline: none;
+}
+
+input, select {
+  font-family: 'DM Sans', sans-serif;
+  outline: none;
+}
+
+a {
+  color: var(--azure-deep);
+  text-decoration: none;
+}
