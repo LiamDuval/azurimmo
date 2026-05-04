@@ -20,7 +20,13 @@ public class ContratController {
 
     @Autowired
     private ContratService contratService;
-  
+
+    @GetMapping("/liste")
+    @Operation(summary = "Lister tous les contrats")
+    public List<ContratDTO> getAllContrats() {
+        return contratService.findAllDTO();
+    }
+
     @PostMapping("/")
     @Operation(summary = "Créer un contrat")
     public ResponseEntity<ContratDTO> createContrat(@RequestBody ContratDTO dto) {

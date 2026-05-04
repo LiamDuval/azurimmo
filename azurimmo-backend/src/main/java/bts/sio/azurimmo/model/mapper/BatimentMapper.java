@@ -11,13 +11,14 @@ public class BatimentMapper {
         if (b == null) return null;
         BatimentDTO dto = new BatimentDTO();
         dto.setId(b.getId());
+        // ✅ nom était oublié ici → les cartes affichaient "Bâtiment #id" au lieu du vrai nom
+        dto.setNom(b.getNom());
         dto.setAdresse(b.getAdresse());
         dto.setVille(b.getVille());
 
         if (b.getAppartements() != null) {
             dto.setAppartements(
-                b
-                    .getAppartements()
+                b.getAppartements()
                     .stream()
                     .map(AppartementMapper::toDTO)
                     .collect(Collectors.toList())
@@ -29,8 +30,7 @@ public class BatimentMapper {
 
         if (b.getGerants() != null) {
             dto.setGerantIds(
-                b
-                    .getGerants()
+                b.getGerants()
                     .stream()
                     .map(Gerant::getId)
                     .collect(Collectors.toList())
@@ -44,6 +44,7 @@ public class BatimentMapper {
         if (dto == null) return null;
         Batiment b = new Batiment();
         b.setId(dto.getId());
+        b.setNom(dto.getNom());
         b.setAdresse(dto.getAdresse());
         b.setVille(dto.getVille());
         return b;

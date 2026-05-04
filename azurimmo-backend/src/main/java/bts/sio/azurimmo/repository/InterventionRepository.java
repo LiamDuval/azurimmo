@@ -14,4 +14,5 @@ public interface InterventionRepository extends JpaRepository<Intervention, Long
     List<Intervention> findByVille(String ville);
     List<Intervention> findByAdresse(String adresse);
     List<Intervention> findByDescription(String description);
+    List<Intervention> findByAppartement_Id(Long appartementId);
 }
