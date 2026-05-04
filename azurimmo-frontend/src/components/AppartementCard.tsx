@@ -1,11 +1,16 @@
 import type { Appartement } from '../types';
 
-export default function AppartementCard() {
-  const { surface, nombreDePiece, description, Numero, batiment } = appartement;
+interface Props {
+  appartement: Appartement;
+  onClick: (a: Appartement) => void;
+}
+
+export default function AppartementCard({ appartement, onClick }: Props) {
+  const { surface, nombreDePiece, description, numero, batiment } = appartement;
 
   return (
     <article className="apt-card" onClick={() => onClick(appartement)}>
-      <div className="apt-card__badge">Appt. N°{Numero}</div>
+      <div className="apt-card__badge">Appt. N°{numero}</div>
 
       <div className="apt-card__visual">
         <div className="apt-card__icon-wrap">
@@ -26,7 +31,7 @@ export default function AppartementCard() {
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
             <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5S10.62 6.5 12 6.5s2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z" fill="currentColor"/>
           </svg>
-          <span>{batiment?.adresse}, {batiment?.ville}</span>
+          <span>{batiment?.adresse}{batiment?.ville ? `, ${batiment.ville}` : ''}</span>
         </div>
 
         <h3 className="apt-card__title">
@@ -48,8 +53,8 @@ export default function AppartementCard() {
       </div>
 
       <div className="apt-card__footer">
-		<button className="apt-card__btn" onClick={() => onClick(appartement)}>Voir le détail →</button>
-	  </div>
+        <button className="apt-card__btn">Voir le détail →</button>
+      </div>
     </article>
   );
 }
