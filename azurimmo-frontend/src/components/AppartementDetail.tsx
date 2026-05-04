@@ -1,29 +1,27 @@
 import { useEffect, useState } from "react";
 import type { Appartement } from "../types/index";
 import "../components.css";
+import { useParams, useNavigate } from "react-router-dom";
 import "./AppartementDetail.css";
- 
 
 const API_BASE = import.meta.env.VITE_API_BASE;
- 
-interface Props {
-  appartementId: number;
-  onBack: () => void;
-  onShowInterventions: (id: number) => void;
-  onShowContrats: (id: number) => void;
-}
- 
-export default function AppartementDetail({ appartementId, onBack, onShowInterventions, onShowContrats }: Props) {
+
+export default function AppartementDetail() {
+  const { id } = useParams();
+  const navigate = useNavigate();
+  const appartementId = Number(id);
+
+  const isGerant = localStorage.getItem('gerant') !== null;
+
   const [apt, setApt] = useState<Appartement | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
- 
+
   useEffect(() => {
     const fetchDetail = async () => {
       setLoading(true);
       setError(null);
       try {
-
         const res = await fetch(`${API_BASE}/appartements/${appartementId}`);
         if (!res.ok) throw new Error(`Erreur HTTP: ${res.status}`);
         const data: Appartement = await res.json();
@@ -34,7 +32,7 @@ export default function AppartementDetail({ appartementId, onBack, onShowInterve
         setLoading(false);
       }
     };
- 
+
     fetchDetail();
   }, [appartementId]);
 
@@ -65,7 +63,7 @@ export default function AppartementDetail({ appartementId, onBack, onShowInterve
           </div>
           <h3 className="state-title">Appartement introuvable</h3>
           <p className="state-text">{error}</p>
-          <button className="btn-primary" onClick={onBack}>← Retour à la liste</button>
+          <button className="btn-primary" onClick={() => navigate('/')}>← Retour à la liste</button>
         </div>
       </div>
     );
@@ -76,14 +74,13 @@ export default function AppartementDetail({ appartementId, onBack, onShowInterve
   return (
     <div className="detail-page">
 
-      {/* ── Hero ── */}
       <header className="detail-hero">
         <div className="hero-bg" />
         <div className="detail-hero__orb detail-hero__orb--1" />
         <div className="detail-hero__orb detail-hero__orb--2" />
 
         <div className="detail-hero__nav">
-          <button className="detail-back-btn" onClick={onBack}>
+          <button className="detail-back-btn" onClick={() => navigate('/')}>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
               <path d="M19 12H5M12 5l-7 7 7 7" />
             </svg>
@@ -120,11 +117,9 @@ export default function AppartementDetail({ appartementId, onBack, onShowInterve
         </div>
       </header>
 
-      {/* ── Contenu principal ── */}
       <main className="detail-main">
         <div className="detail-layout">
 
-          {/* ─ Colonne gauche ─ */}
           <div className="detail-left">
 
             <section className="detail-stats">
@@ -193,7 +188,6 @@ export default function AppartementDetail({ appartementId, onBack, onShowInterve
             </section>
           </div>
 
-          {/* ─ Colonne droite ─ */}
           <div className="detail-right">
 
             <div className="detail-building-card">
@@ -237,29 +231,32 @@ export default function AppartementDetail({ appartementId, onBack, onShowInterve
               </div>
             </div>
 
-            {/* ✅ Bouton Interventions */}
-            <button
-              className="btn btn-intervention"
-              onClick={() => onShowInterventions(appartementId)}
-              style={{ marginBottom: '10px' }}
-            >
-              Interventions
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
-                <path d="M12 5v14M5 12h14" />
-              </svg>
-            </button>
 
-            {/* ✅ AJOUT — Bouton Contrats */}
-            <button
-              className="btn btn-intervention"
-              onClick={() => onShowContrats(appartementId)}
-            >
-              Contrats
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
-                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                <polyline points="14 2 14 8 20 8" />
-              </svg>
-            </button>
+            {isGerant && (
+              <button
+                className="btn btn-intervention"
+                onClick={() => navigate(`/appartements/${appartementId}/interventions`)}
+                style={{ marginBottom: '10px' }}
+              >
+                Interventions
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
+                  <path d="M12 5v14M5 12h14" />
+                </svg>
+              </button>
+            )}
+
+            {isGerant && (
+              <button
+                className="btn btn-intervention"
+                onClick={() => navigate(`/appartements/${appartementId}/contrats`)}
+              >
+                Contrats
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                  <polyline points="14 2 14 8 20 8" />
+                </svg>
+              </button>
+            )}
 
           </div>
 

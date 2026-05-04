@@ -1,11 +1,6 @@
 import type { Appartement } from '../types';
 
-interface Props {
-  appartement: Appartement;
-  onClick: (a: Appartement) => void;
-}
-
-export default function AppartementCard({ appartement, onClick }: Props) {
+export default function AppartementCard() {
   const { surface, nombreDePiece, description, Numero, batiment } = appartement;
 
   return (
