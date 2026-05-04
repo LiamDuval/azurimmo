@@ -24,9 +24,9 @@ public class Batiment {
 
     @Column(name = "adresse")
     private String adresse;
-    
+
     @Column(name = "nom")
-    private String nom; 
+    private String nom;
 
     @Column(name = "ville")
     private String ville;
@@ -36,6 +36,6 @@ public class Batiment {
     private List<Appartement> appartements;
 
     @OneToMany(mappedBy = "batiment")
-    @JsonIgnoreProperties("batiment") 
+    @JsonIgnoreProperties("batiment")
     private List<Gerant> gerants;
 }

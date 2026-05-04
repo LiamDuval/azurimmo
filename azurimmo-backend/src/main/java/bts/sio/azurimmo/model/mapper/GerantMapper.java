@@ -31,6 +31,7 @@ public class GerantMapper {
         gerant.setPrenom(dto.getPrenom());
         gerant.setTelephone(dto.getTel());
         gerant.setMail(dto.getMail());
+        gerant.setPassword(dto.getPassword());
 
         return gerant;
     }
