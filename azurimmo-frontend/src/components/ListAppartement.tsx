@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from 'react-router-dom';
 import FilterBar, { type SortOption } from "./FilterBar";
 import "./ListAppartement.css";
  
@@ -35,6 +36,8 @@ export default function ListAppartement({ onSelectAppartement }: Props) {
   const [filtered, setFiltered] = useState<Appartement[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  
+  const navigate = useNavigate()
  
   const fetchData = async () => {
     setLoading(true);
@@ -91,20 +94,26 @@ export default function ListAppartement({ onSelectAppartement }: Props) {
 
   return (
     <div className="page">
-      {/* Hero */}
       <header className="hero">
         <div className="hero-bg" />
         <div className="hero-content">
           <span className="hero-label">Agence Azurimmo</span>
           <h1 className="hero-title">Nos Appartements</h1>
           <p className="hero-subtitle">Trouvez le bien qui vous correspond</p>
-          <div className="hero-badge">
-            <span className="badge-dot" />
-            {loading
-              ? "Chargement..."
-              : `${filtered.length} appartement${filtered.length > 1 ? "s" : ""} disponible${filtered.length > 1 ? "s" : ""}`}
-          </div>
-        </div>
+		    <div className="hero-badge">
+		      <span className="badge-dot" />
+		      {loading
+		        ? "Chargement..."
+		        : `${filtered.length} appartement${filtered.length > 1 ? "s" : ""} disponible${filtered.length > 1 ? "s" : ""}`}
+		    </div>
+		    <button
+		      className="btn-login-hero"
+		      onClick={() => navigate('/login')}
+		    >
+		      Espace Gérant
+		    </button>
+
+		  </div>
         <div className="hero-wave">
           <svg viewBox="0 0 1440 80" preserveAspectRatio="none">
             <path d="M0,40 C360,80 1080,0 1440,40 L1440,80 L0,80 Z" fill="#F8FAFF" />
@@ -112,10 +121,8 @@ export default function ListAppartement({ onSelectAppartement }: Props) {
         </div>
       </header>
 
-      {/* FilterBar */}
       <FilterBar total={filtered.length} onChange={handleFiltersChange} />
 
-      {/* Contenu */}
       <main className="main-content">
         {loading && (
           <div className="state-wrap">
@@ -150,27 +157,21 @@ export default function ListAppartement({ onSelectAppartement }: Props) {
                 key={apt.id}
                 style={{ animationDelay: `${i * 0.07}s` }}
               >
-                {/* ── Header bleu de la card ── */}
                 <div className="card-header">
                   <div className="card-badge">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
                       <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
                     </svg>
-                    {/* ✅ numero — colonne SQL "numero" */}
                     Apt. {apt.numero ?? "?"}
                   </div>
-                  {/* ✅ surface — colonne SQL "surface" */}
                   <div className="card-surface">{apt.surface ?? "?"} m²</div>
                 </div>
 
-                {/* ── Corps de la card ── */}
                 <div className="card-body">
-                  {/* ✅ batiment.nom — colonne SQL "nom" dans batiment */}
                   <h2 className="card-title">
                     {apt.batiment?.nom ?? "Bâtiment inconnu"}
                   </h2>
 
-                  {/* ✅ batiment.ville — colonne SQL "ville" dans batiment */}
                   {apt.batiment?.ville && (
                     <div className="card-location">
                       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="13" height="13">
@@ -181,15 +182,12 @@ export default function ListAppartement({ onSelectAppartement }: Props) {
                     </div>
                   )}
 
-                  {/* ✅ description — colonne SQL "description" */}
                   <p className="card-desc">
                     {apt.description || "Appartement de standing dans un bâtiment d'exception."}
                   </p>
                 </div>
 
-                {/* ── Footer de la card ── */}
                 <div className="card-footer">
-                  {/* ✅ nombreDePiece — Spring convertit "nombre_de_piece" en "nombreDePiece" */}
                   <div className="card-stat">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="15" height="15">
                       <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />

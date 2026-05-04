@@ -1,70 +1,30 @@
-import { useState } from 'react';
-import ListAppartement from './components/ListAppartement';
-import AppartementDetail from './components/AppartementDetail';
-import InterventionPage from './components/InterventionPage';
-import ContratPage from './components/ContratPage';
-import './App.css';
-
-type View = 'list' | 'detail' | 'interventions' | 'contrats';
+import { Routes, Route, Navigate } from 'react-router-dom'
+import ListAppartement from './components/ListAppartement'
+import AppartementDetail from './components/AppartementDetail'
+import LoginPage from './pages/LoginPage'
+import GerantDashboard from './pages/GerantDashboard'
+import GerantBatiments from './pages/GerantBatiments'
+import GerantAppartements from './pages/GerantAppartements'
+import ProtectedRoute from './components/ProtectedRoute'
+import './App.css'
 
 function App() {
-
-  const [view, setView] = useState<View>('list');
-  const [selectedId, setSelectedId] = useState<number | null>(null);
-
-  const handleSelectAppartement = (id: number) => {
-    setSelectedId(id);
-    setView('detail');
-  };
-
-  const handleShowInterventions = (id: number) => {
-    setSelectedId(id);
-    setView('interventions');
-  };
-
-  const handleShowContrats = (id: number) => {
-    setSelectedId(id);
-    setView('contrats');
-  };
-
   return (
-    <div className="app-root">
+    <Routes>
+      <Route path="/" element={<ListAppartement onSelectAppartement={() => {}} />} />
+      <Route path="/appartements/:id" element={<AppartementDetail />} />
 
-      {/* Vue 1 : liste de tous les appartements */}
-      {view === 'list' && (
-        <ListAppartement
-          onSelectAppartement={handleSelectAppartement}
-        />
-      )}
+      <Route path="/login" element={<LoginPage />} />
 
-      {/* Vue 2 : détail d'un appartement */}
-      {view === 'detail' && selectedId !== null && (
-        <AppartementDetail
-          appartementId={selectedId}
-          onBack={() => setView('list')}
-          onShowInterventions={handleShowInterventions}
-          onShowContrats={handleShowContrats}
-        />
-      )}
+      <Route path="/gerant" element={<ProtectedRoute />}>
+        <Route path="dashboard"    element={<GerantDashboard />} />
+        <Route path="batiments"    element={<GerantBatiments />} />
+        <Route path="appartements" element={<GerantAppartements />} />
+      </Route>
 
-      {/* Vue 3 : interventions d'un appartement */}
-      {view === 'interventions' && selectedId !== null && (
-        <InterventionPage
-          appartementId={selectedId}
-          onBack={() => setView('detail')}
-        />
-      )}
-
-      {/* Vue 4 : contrats d'un appartement */}
-      {view === 'contrats' && selectedId !== null && (
-        <ContratPage
-          appartementId={selectedId}
-          onBack={() => setView('detail')}
-        />
-      )}
-
-    </div>
-  );
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
+  )
 }
 
-export default App;
+export default App
