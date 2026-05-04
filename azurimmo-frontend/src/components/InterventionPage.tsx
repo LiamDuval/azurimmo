@@ -12,6 +12,7 @@ interface Intervention {
  
 interface InterventionPageProps {
   appartementId?: number;
+  onBack: () => void;
 }
  
 const InterventionPage: React.FC<InterventionPageProps> = ({
