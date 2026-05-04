@@ -3,8 +3,10 @@ export interface Batiment {
   nom?: string;
   adresse?: string;
   ville?: string;
+  appartements?: Appartement[];
+  nombreAppartements?: number;
 }
- 
+
 export interface Appartement {
   id: number;
   batiment: Batiment;
@@ -13,7 +15,27 @@ export interface Appartement {
   description?: string;
   Numero: string;
 }
- 
- 
-export type SortOption = 'surface-asc' | 'surface-desc' | 'pieces-asc' | 'pieces-desc';
- 
+
+export interface Contrat {
+  id: number;
+  description: string;
+  montantBrut: number;
+  montantCharge: number;
+  statut: string;
+  dateDebut: string;
+  dateFin: string | null;
+  appartementId: number;
+  locataireId: number;
+}
+
+export interface Intervention {
+  id: number;
+  libelle: string;
+  description: string;
+  adresse: string;
+  ville: string;
+  dateIntervention?: string;
+  heure: string;
+  appartementId: number;
+  typeInterventionId: number;
+}

@@ -1,52 +1,8 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import type { Batiment, Appartement, Contrat, Intervention } from '../types'
 
-// ─────────────────────────────────────────────
-// TYPES — interfaces TypeScript pour typer les données de l'API
-// ─────────────────────────────────────────────
 type Page = 'accueil' | 'batiments' | 'appartements' | 'contrats' | 'interventions'
-
-interface Batiment {
-  id: number
-  nom: string
-  adresse: string
-  ville: string
-  appartements?: Appartement[]
-  nombreAppartements?: number
-}
-
-interface Appartement {
-  id: number
-  numero: string
-  surface: number
-  nombreDePiece: number
-  description: string
-  batiment: Batiment
-}
-
-interface Contrat {
-  id: number
-  description: string
-  montantBrut: number
-  montantCharge: number
-  statut: string
-  dateDebut: string
-  dateFin: string | null
-  appartementId: number
-  locataireId: number
-}
-
-interface Intervention {
-  id: number
-  libelle: string
-  description: string
-  adresse: string
-  ville: string
-  dateIntervention?: string
-  heure: string
-  appartementId: number
-  typeInterventionId: number
-}
 
 const API_BASE = import.meta.env.VITE_API_BASE
 

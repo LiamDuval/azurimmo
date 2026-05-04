@@ -1,26 +1,11 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from 'react-router-dom';
 import FilterBar, { type SortOption } from "./FilterBar";
+import type { Appartement } from '../types';
 import "./ListAppartement.css";
- 
+
 const API_BASE = import.meta.env.VITE_API_BASE;
- 
-interface Batiment {
-  id: number;
-  nom: string;
-  adresse: string;
-  ville: string;
-}
- 
-interface Appartement {
-  id: number;
-  numero: string;
-  surface: number;
-  nombreDePiece: number;
-  description: string;
-  batiment: Batiment;
-}
- 
+
 interface FilterValues {
   search: string;
   minSurface: string;
