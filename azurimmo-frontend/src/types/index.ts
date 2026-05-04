@@ -13,7 +13,7 @@ export interface Appartement {
   surface: number;
   nombreDePiece: number;
   description?: string;
-  Numero: string;
+  numero: string;
 }
 
 export interface Contrat {

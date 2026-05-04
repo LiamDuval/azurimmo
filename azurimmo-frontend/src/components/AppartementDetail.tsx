@@ -69,7 +69,7 @@ export default function AppartementDetail() {
     );
   }
 
-  const { surface, nombreDePiece, description, Numero, batiment } = apt;
+  const { surface, nombreDePiece, description, numero, batiment } = apt;
 
   return (
     <div className="detail-page">
@@ -91,7 +91,7 @@ export default function AppartementDetail() {
         <div className="detail-hero__content">
           <div className="detail-hero__tags">
             <span className="hero-label">Agence Azurimmo</span>
-            {Numero && <span className="detail-numero-badge">Apt. {Numero}</span>}
+            {numero && <span className="detail-numero-badge">Apt. {numero}</span>}
           </div>
 
           <h1 className="detail-hero__title">
@@ -176,7 +176,7 @@ export default function AppartementDetail() {
                 </div>
                 <div className="detail-feature">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16"><polyline points="20 6 9 17 4 12" /></svg>
-                  <span>Appartement N°{Numero}</span>
+                  <span>Appartement N°{numero}</span>
                 </div>
                 {batiment?.ville && (
                   <div className="detail-feature">
