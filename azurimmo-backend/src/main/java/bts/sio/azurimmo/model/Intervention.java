@@ -34,7 +34,7 @@ public class Intervention {
 
     @Column(name = "heure")
     private LocalTime heure;
-    
+
     @ManyToOne
     @JoinColumn(name = "type_intervention_id")
     private TypeIntervention typeIntervention;
