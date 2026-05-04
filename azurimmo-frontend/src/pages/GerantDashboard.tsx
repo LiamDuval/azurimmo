@@ -1,541 +1,548 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 
 // ─────────────────────────────────────────────
-// TYPES
+// TYPES — interfaces TypeScript pour typer les données de l'API
 // ─────────────────────────────────────────────
-type Page = 'accueil' | 'appartements' | 'batiments' | 'contrats' | 'interventions'
+type Page = 'accueil' | 'batiments' | 'appartements' | 'contrats' | 'interventions'
+
+interface Batiment {
+  id: number
+  nom: string
+  adresse: string
+  ville: string
+  appartements?: Appartement[]
+  nombreAppartements?: number
+}
+
+interface Appartement {
+  id: number
+  numero: string
+  surface: number
+  nombreDePiece: number
+  description: string
+  batiment: Batiment
+}
+
+interface Contrat {
+  id: number
+  description: string
+  montantBrut: number
+  montantCharge: number
+  statut: string
+  dateDebut: string
+  dateFin: string | null
+  appartementId: number
+  locataireId: number
+}
+
+interface Intervention {
+  id: number
+  libelle: string
+  description: string
+  adresse: string
+  ville: string
+  dateIntervention?: string
+  heure: string
+  appartementId: number
+  typeInterventionId: number
+}
+
+const API_BASE = import.meta.env.VITE_API_BASE
 
 // ─────────────────────────────────────────────
-// ICÔNES SVG inline (pas de dépendance externe)
+// HOOK GÉNÉRIQUE — charge des données depuis l'API
 // ─────────────────────────────────────────────
-const Icons = {
-  home: (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18">
-      <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
-      <polyline points="9 22 9 12 15 12 15 22" />
-    </svg>
-  ),
-  building: (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18">
-      <rect x="2" y="7" width="20" height="14" rx="2" />
-      <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" />
-    </svg>
-  ),
-  apt: (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18">
-      <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
-    </svg>
-  ),
-  contract: (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18">
-      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-      <polyline points="14 2 14 8 20 8" />
-      <line x1="16" y1="13" x2="8" y2="13" />
-      <line x1="16" y1="17" x2="8" y2="17" />
-    </svg>
-  ),
-  wrench: (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18">
-      <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" />
-    </svg>
-  ),
-  logout: (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18">
-      <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
-      <polyline points="16 17 21 12 16 7" />
-      <line x1="21" y1="12" x2="9" y2="12" />
-    </svg>
-  ),
-  chevron: (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
-      <path d="M5 12h14M12 5l7 7-7 7" />
-    </svg>
-  ),
-  eye: (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
-      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-      <circle cx="12" cy="12" r="3" />
-    </svg>
-  ),
+// Ce hook (fonction réutilisable) évite de réécrire le même fetch + loading + error
+// dans chaque composant. On le réutilise pour batiments, contrats, interventions...
+function useFetch<T>(url: string, deps: unknown[] = []) {
+  const [data, setData] = useState<T[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    setLoading(true)
+    setError(null)
+    fetch(url)
+      .then(r => {
+        if (!r.ok) throw new Error(`Erreur HTTP ${r.status}`)
+        return r.json()
+      })
+      .then(setData)
+      .catch(e => setError(e.message))
+      .finally(() => setLoading(false))
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, deps)
+
+  return { data, loading, error }
 }
 
 // ─────────────────────────────────────────────
-// COMPOSANT PRINCIPAL
+// SOUS-COMPOSANTS — une page par section
+// ─────────────────────────────────────────────
+
+// ── Page Bâtiments ──────────────────────────
+function PageBatiments({ onViewAppartements }: { onViewAppartements: (b: Batiment) => void }) {
+  const { data: batiments, loading, error } = useFetch<Batiment>(`${API_BASE}/batiments/liste`)
+
+  if (loading) return <Loader text="Chargement des bâtiments…" />
+  if (error)   return <ErrorMsg text={error} />
+
+  return (
+    <>
+      <PageHeader title="Bâtiments" sub={`${batiments.length} bâtiment${batiments.length > 1 ? 's' : ''}`} />
+      <div style={styles.grid3}>
+        {batiments.map(b => (
+          <div key={b.id} style={styles.card}>
+            <div style={styles.cardTop}>
+              <div style={{ ...styles.cardIcon, background: 'rgba(0,150,199,0.15)', color: '#48cae4' }}>🏗️</div>
+              <span style={styles.cardId}>#{b.id}</span>
+            </div>
+            <h3 style={styles.cardTitle}>{b.nom ?? `Bâtiment #${b.id}`}</h3>
+            <p style={styles.cardSub}>{b.adresse}</p>
+            <p style={{ ...styles.cardSub, color: '#48cae4', marginTop: 2 }}>{b.ville}</p>
+            {b.nombreAppartements !== undefined && (
+              <p style={styles.cardMeta}>{b.nombreAppartements} appartement{b.nombreAppartements > 1 ? 's' : ''}</p>
+            )}
+            <button style={styles.btnSecondary} onClick={() => onViewAppartements(b)}>
+              Voir les appartements →
+            </button>
+          </div>
+        ))}
+      </div>
+    </>
+  )
+}
+
+// ── Page Appartements ────────────────────────
+function PageAppartements({ batimentFiltre }: { batimentFiltre: Batiment | null }) {
+  // Si on arrive depuis "Voir les appartements" d'un bâtiment, on filtre par bâtiment
+  // Sinon on charge tous les appartements
+  const url = batimentFiltre
+    ? `${API_BASE}/appartements/batiment/${batimentFiltre.id}`
+    : `${API_BASE}/appartements/`
+
+  const { data: appartements, loading, error } = useFetch<Appartement>(url, [batimentFiltre?.id])
+  const navigate = useNavigate()
+
+  if (loading) return <Loader text="Chargement des appartements…" />
+  if (error)   return <ErrorMsg text={error} />
+
+  return (
+    <>
+      <PageHeader
+        title="Appartements"
+        sub={batimentFiltre
+          ? `${appartements.length} appart. — ${batimentFiltre.nom ?? 'Bâtiment #' + batimentFiltre.id}`
+          : `${appartements.length} appartement${appartements.length > 1 ? 's' : ''}`}
+      />
+      <div style={styles.grid3}>
+        {appartements.map(a => (
+          <div key={a.id} style={styles.card}>
+            <div style={styles.cardTop}>
+              <div style={{ ...styles.cardIcon, background: 'rgba(105,224,156,0.15)', color: '#69e09c' }}>🏠</div>
+              <span style={styles.cardId}>Apt. {a.numero ?? a.id}</span>
+            </div>
+            <h3 style={styles.cardTitle}>{a.batiment?.nom ?? `Bâtiment #${a.batiment?.id}`}</h3>
+            <p style={styles.cardSub}>{a.batiment?.ville}</p>
+            <div style={styles.chips}>
+              <span style={styles.chip}>{a.surface} m²</span>
+              <span style={styles.chip}>{a.nombreDePiece} pièce{a.nombreDePiece > 1 ? 's' : ''}</span>
+            </div>
+            {/* Bouton vers la fiche publique de l'appartement */}
+            <button style={styles.btnSecondary} onClick={() => navigate(`/appartements/${a.id}`)}>
+              Voir la fiche →
+            </button>
+          </div>
+        ))}
+      </div>
+    </>
+  )
+}
+
+// ── Page Contrats ────────────────────────────
+function PageContrats() {
+  const { data: contrats, loading, error } = useFetch<Contrat>(`${API_BASE}/contrats/liste`)
+
+  const formatDate = (d: string | null) => {
+    if (!d) return '—'
+    return new Date(d).toLocaleDateString('fr-FR')
+  }
+
+  // Retourne la couleur du badge selon le statut
+  const statutColor = (s: string) => {
+    switch (s?.toUpperCase()) {
+      case 'ACTIF':    return { bg: 'rgba(105,224,156,0.15)', color: '#69e09c' }
+      case 'TERMINE':
+      case 'TERMINÉ':  return { bg: 'rgba(255,100,100,0.15)', color: '#ff6b6b' }
+      default:         return { bg: 'rgba(255,255,255,0.08)', color: '#aaa' }
+    }
+  }
+
+  if (loading) return <Loader text="Chargement des contrats…" />
+  if (error)   return <ErrorMsg text={error} />
+
+  return (
+    <>
+      <PageHeader title="Contrats" sub={`${contrats.length} contrat${contrats.length > 1 ? 's' : ''}`} />
+      <div style={styles.table}>
+        {/* Ligne d'en-tête du tableau */}
+        <div style={styles.tableHead}>
+          <span>ID</span>
+          <span>Description</span>
+          <span>Appart.</span>
+          <span>Début</span>
+          <span>Fin</span>
+          <span>Montant</span>
+          <span>Statut</span>
+        </div>
+        {contrats.map((c, i) => {
+          const sc = statutColor(c.statut)
+          return (
+            <div key={c.id} style={{ ...styles.tableRow, animationDelay: `${i * 0.04}s` }}>
+              <span style={{ color: '#48cae4', fontWeight: 600 }}>#{c.id}</span>
+              <span style={{ color: '#ccc', fontSize: '0.82rem' }}>{c.description || '—'}</span>
+              <span>Apt. #{c.appartementId}</span>
+              <span>{formatDate(c.dateDebut)}</span>
+              <span>{formatDate(c.dateFin)}</span>
+              <span style={{ color: '#fbbf24', fontWeight: 600 }}>
+                {c.montantBrut ? `${c.montantBrut + (c.montantCharge ?? 0)} €` : '—'}
+              </span>
+              <span style={{
+                display: 'inline-block', padding: '3px 10px', borderRadius: 20,
+                fontSize: '0.72rem', fontWeight: 700, letterSpacing: '0.06em',
+                background: sc.bg, color: sc.color
+              }}>
+                {c.statut ?? '—'}
+              </span>
+            </div>
+          )
+        })}
+      </div>
+    </>
+  )
+}
+
+// ── Page Interventions ───────────────────────
+function PageInterventions() {
+  const { data: interventions, loading, error } = useFetch<Intervention>(`${API_BASE}/interventions/liste`)
+
+  if (loading) return <Loader text="Chargement des interventions…" />
+  if (error)   return <ErrorMsg text={error} />
+
+  // Couleur par type d'intervention (typeInterventionId)
+  const typeColor = (id: number) => {
+    const colors: Record<number, { bg: string; color: string; label: string }> = {
+      1: { bg: 'rgba(0,150,199,0.15)',  color: '#48cae4', label: 'Plomberie'    },
+      2: { bg: 'rgba(251,191,36,0.15)', color: '#fbbf24', label: 'Électricité'  },
+      3: { bg: 'rgba(236,72,153,0.15)', color: '#f472b6', label: 'Serrurerie'   },
+      4: { bg: 'rgba(105,224,156,0.15)',color: '#69e09c', label: 'Menuiserie'   },
+      5: { bg: 'rgba(167,139,250,0.15)',color: '#a78bfa', label: 'Déménagement' },
+    }
+    return colors[id] ?? { bg: 'rgba(255,255,255,0.08)', color: '#aaa', label: `Type #${id}` }
+  }
+
+  return (
+    <>
+      <PageHeader title="Interventions" sub={`${interventions.length} intervention${interventions.length > 1 ? 's' : ''}`} />
+      <div style={styles.grid2}>
+        {interventions.map((inv, i) => {
+          const tc = typeColor(inv.typeInterventionId)
+          return (
+            <div key={inv.id} style={{ ...styles.card, animationDelay: `${i * 0.04}s` }}>
+              <div style={styles.cardTop}>
+                <span style={{
+                  padding: '3px 10px', borderRadius: 20,
+                  fontSize: '0.72rem', fontWeight: 700,
+                  background: tc.bg, color: tc.color
+                }}>
+                  {tc.label}
+                </span>
+                <span style={styles.cardId}>Apt. #{inv.appartementId}</span>
+              </div>
+              <h3 style={styles.cardTitle}>{inv.libelle || 'Intervention'}</h3>
+              <p style={styles.cardSub}>{inv.description}</p>
+              <div style={{ display: 'flex', gap: 12, marginTop: 12, flexWrap: 'wrap' }}>
+                {inv.dateIntervention && (
+                  <span style={styles.chip}>📅 {new Date(inv.dateIntervention).toLocaleDateString('fr-FR')}</span>
+                )}
+                {inv.heure && (
+                  <span style={styles.chip}>🕐 {String(inv.heure).slice(0, 5)}</span>
+                )}
+                {inv.ville && (
+                  <span style={styles.chip}>📍 {inv.ville}</span>
+                )}
+              </div>
+            </div>
+          )
+        })}
+      </div>
+    </>
+  )
+}
+
+// ─────────────────────────────────────────────
+// COMPOSANTS UTILITAIRES (réutilisés partout)
+// ─────────────────────────────────────────────
+function Loader({ text }: { text: string }) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '60px 0', color: 'rgba(255,255,255,0.4)' }}>
+      <div style={{
+        width: 24, height: 24, border: '3px solid rgba(255,255,255,0.1)',
+        borderTopColor: '#0096c7', borderRadius: '50%',
+        animation: 'spin 0.8s linear infinite'
+      }} />
+      {text}
+    </div>
+  )
+}
+
+function ErrorMsg({ text }: { text: string }) {
+  return (
+    <div style={{
+      background: 'rgba(255,80,80,0.1)', border: '1px solid rgba(255,80,80,0.2)',
+      borderRadius: 12, padding: '20px 24px', color: '#ff6b6b', marginTop: 20
+    }}>
+      ⚠️ {text}
+    </div>
+  )
+}
+
+function PageHeader({ title, sub }: { title: string; sub: string }) {
+  return (
+    <div style={{ marginBottom: 32 }}>
+      <h1 style={{ fontFamily: "'Syne', sans-serif", fontSize: '2rem', fontWeight: 800, color: '#fff', letterSpacing: '-0.03em', margin: 0 }}>
+        {title}
+      </h1>
+      <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.875rem', marginTop: 4 }}>{sub}</p>
+    </div>
+  )
+}
+
+// ─────────────────────────────────────────────
+// STYLES — objet JavaScript de styles inline
+// Utilisés comme style={{ ...styles.card }} dans le JSX
+// ─────────────────────────────────────────────
+const styles: Record<string, React.CSSProperties> = {
+  grid3: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))',
+    gap: 16,
+    width: '100%',
+  },
+  grid2: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
+    gap: 16,
+    width: '100%',
+  },
+  card: {
+    background: 'rgba(255,255,255,0.04)',
+    border: '1px solid rgba(255,255,255,0.08)',
+    borderRadius: 16,
+    padding: '20px 22px',
+    transition: 'all 0.2s',
+    animation: 'fadeUp 0.4s ease both',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 6,
+  },
+  cardTop: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  cardIcon: {
+    width: 38, height: 38, borderRadius: 10,
+    display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18,
+  },
+  cardId: {
+    fontSize: '0.72rem', color: 'rgba(255,255,255,0.3)',
+    fontWeight: 600, letterSpacing: '0.06em',
+  },
+  cardTitle: {
+    fontFamily: "'Syne', sans-serif",
+    fontSize: '1rem', fontWeight: 700, color: '#fff', margin: 0,
+  },
+  cardSub: {
+    fontSize: '0.8rem', color: 'rgba(255,255,255,0.4)', margin: 0,
+  },
+  cardMeta: {
+    fontSize: '0.75rem', color: '#48cae4', margin: '4px 0',
+  },
+  chips: { display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 8 },
+  chip: {
+    background: 'rgba(255,255,255,0.07)',
+    border: '1px solid rgba(255,255,255,0.1)',
+    borderRadius: 20, padding: '3px 10px',
+    fontSize: '0.75rem', color: 'rgba(255,255,255,0.6)',
+  },
+  btnSecondary: {
+    marginTop: 14,
+    background: 'rgba(0,150,199,0.12)',
+    border: '1px solid rgba(0,150,199,0.25)',
+    borderRadius: 8, padding: '7px 14px',
+    color: '#48cae4', fontSize: '0.8rem', fontWeight: 600,
+    cursor: 'pointer', fontFamily: "'DM Sans', sans-serif",
+    transition: 'all 0.2s', width: '100%',
+  },
+  // Tableau pour les contrats
+  table: {
+    background: 'rgba(255,255,255,0.03)',
+    border: '1px solid rgba(255,255,255,0.07)',
+    borderRadius: 16,
+    overflow: 'auto',  // scroll horizontal sur petits écrans
+    width: '100%',
+  },
+  tableHead: {
+    display: 'grid',
+    gridTemplateColumns: '60px 1fr 80px 100px 100px 100px 110px',
+    gap: 12, padding: '12px 20px',
+    background: 'rgba(255,255,255,0.05)',
+    fontSize: '0.7rem', fontWeight: 700,
+    letterSpacing: '0.1em', textTransform: 'uppercase' as const,
+    color: 'rgba(255,255,255,0.35)',
+    minWidth: 700,
+  },
+  tableRow: {
+    display: 'grid',
+    gridTemplateColumns: '60px 1fr 80px 100px 100px 100px 110px',
+    gap: 12, padding: '14px 20px',
+    borderTop: '1px solid rgba(255,255,255,0.05)',
+    fontSize: '0.83rem', color: 'rgba(255,255,255,0.7)',
+    transition: 'background 0.15s', animation: 'fadeUp 0.4s ease both',
+    alignItems: 'center',
+    minWidth: 700,
+  },
+}
+
+// ─────────────────────────────────────────────
+// COMPOSANT PRINCIPAL — Dashboard
 // ─────────────────────────────────────────────
 export default function GerantDashboard() {
   const navigate = useNavigate()
 
-  // On lit les infos du gérant stockées au moment du login
   const gerantJson = localStorage.getItem('gerant')
   const gerant = gerantJson ? JSON.parse(gerantJson) : null
 
-  // useState gère quelle page est active dans la sidebar
-  // Par défaut on est sur 'accueil'
+  // Page active dans la sidebar
   const [activePage, setActivePage] = useState<Page>('accueil')
 
+  // Bâtiment sélectionné — sert à filtrer les appartements
+  // quand on clique "Voir les appartements" depuis la page Bâtiments
+  const [batimentFiltre, setBatimentFiltre] = useState<Batiment | null>(null)
+
   const handleLogout = () => {
-    // On supprime le gérant du localStorage → il est déconnecté
     localStorage.removeItem('gerant')
     navigate('/login')
   }
 
-  // Navigation items de la sidebar
-  const navItems = [
-    { id: 'accueil'       as Page, label: 'Accueil',       icon: Icons.home      },
-    { id: 'batiments'     as Page, label: 'Bâtiments',     icon: Icons.building  },
-    { id: 'appartements'  as Page, label: 'Appartements',  icon: Icons.apt       },
-    { id: 'contrats'      as Page, label: 'Contrats',      icon: Icons.contract  },
-    { id: 'interventions' as Page, label: 'Interventions', icon: Icons.wrench    },
+  // Navigation items de la sidebar avec leur icône SVG
+  const navItems: { id: Page; label: string; emoji: string }[] = [
+    { id: 'accueil',       label: 'Accueil',       emoji: '🏠' },
+    { id: 'batiments',     label: 'Bâtiments',     emoji: '🏗️' },
+    { id: 'appartements',  label: 'Appartements',  emoji: '🏡' },
+    { id: 'contrats',      label: 'Contrats',      emoji: '📄' },
+    { id: 'interventions', label: 'Interventions', emoji: '🔧' },
   ]
+
+  // Quand on clique "Voir les appartements" depuis la page Bâtiments
+  const handleViewAppartements = (b: Batiment) => {
+    setBatimentFiltre(b)       // on mémorise le bâtiment choisi
+    setActivePage('appartements') // on change de page
+  }
+
+  // Quand on change de page manuellement via la sidebar
+  // on réinitialise le filtre bâtiment
+  const handleNav = (page: Page) => {
+    if (page !== 'appartements') setBatimentFiltre(null)
+    setActivePage(page)
+  }
 
   return (
     <>
-      {/* ── Styles injectés en <style> pour ne pas créer de fichier CSS séparé ── */}
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap');
-
         * { box-sizing: border-box; margin: 0; padding: 0; }
 
-        .g-shell {
-          display: flex;
-          height: 100vh;
-          background: #0a0f1e;
-          font-family: 'DM Sans', sans-serif;
-          color: #e8eaf0;
-          overflow: hidden;
-        }
+        @keyframes spin    { to { transform: rotate(360deg); } }
+        @keyframes fadeUp  { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+
+        .g-shell { display: flex; height: 100vh; background: #0a0f1e; font-family: 'DM Sans', sans-serif; color: #e8eaf0; overflow: hidden; }
 
         /* ── SIDEBAR ── */
         .g-sidebar {
-          width: 240px;
-          min-width: 240px;
+          width: 230px; min-width: 230px;
           background: #0d1426;
           border-right: 1px solid rgba(255,255,255,0.06);
-          display: flex;
-          flex-direction: column;
-          padding: 0;
-          position: relative;
-          overflow: hidden;
+          display: flex; flex-direction: column;
+          position: relative; overflow: hidden;
         }
-
-        /* Effet décoratif blob derrière la sidebar */
         .g-sidebar::before {
-          content: '';
-          position: absolute;
-          width: 300px;
-          height: 300px;
-          background: radial-gradient(circle, rgba(0,150,199,0.12) 0%, transparent 70%);
-          top: -80px;
-          left: -80px;
-          pointer-events: none;
+          content: ''; position: absolute;
+          width: 300px; height: 300px;
+          background: radial-gradient(circle, rgba(0,150,199,0.1) 0%, transparent 70%);
+          top: -80px; left: -80px; pointer-events: none;
+        }
+        .g-logo { padding: 24px 20px 18px; display: flex; align-items: center; gap: 11px; border-bottom: 1px solid rgba(255,255,255,0.06); position: relative; z-index: 2; }
+        .g-logo-icon { width: 36px; height: 36px; border-radius: 10px; background: linear-gradient(135deg, #0096c7, #0d47a1); display: flex; align-items: center; justify-content: center; font-size: 17px; box-shadow: 0 4px 14px rgba(0,150,199,0.4); flex-shrink: 0; }
+        .g-logo-text { font-family: 'Syne', sans-serif; font-size: 1.05rem; font-weight: 800; background: linear-gradient(135deg,#fff,#90caf9); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .g-logo-sub  { font-size: 0.6rem; color: rgba(255,255,255,0.3); letter-spacing: 0.1em; text-transform: uppercase; }
+        .g-profile { padding: 16px 20px; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid rgba(255,255,255,0.06); position: relative; z-index: 2; }
+        .g-avatar { width: 34px; height: 34px; border-radius: 50%; background: linear-gradient(135deg,#0096c7,#48cae4); display: flex; align-items: center; justify-content: center; font-family: 'Syne',sans-serif; font-weight: 700; font-size: 0.82rem; color: white; flex-shrink: 0; box-shadow: 0 0 0 2px rgba(0,150,199,0.3); }
+        .g-profile-name { font-size: 0.82rem; font-weight: 600; color: #e8eaf0; line-height: 1.2; }
+        .g-profile-role { font-size: 0.65rem; color: #48cae4; font-weight: 500; }
+        .g-nav { flex: 1; padding: 14px 10px; display: flex; flex-direction: column; gap: 2px; position: relative; z-index: 2; overflow-y: auto; }
+        .g-nav-label { font-size: 0.6rem; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(255,255,255,0.22); padding: 8px 10px 4px; }
+        .g-nav-btn { display: flex; align-items: center; gap: 10px; padding: 9px 10px; border-radius: 9px; cursor: pointer; transition: all 0.15s; color: rgba(255,255,255,0.45); font-size: 0.84rem; font-weight: 500; border: none; background: transparent; width: 100%; text-align: left; position: relative; font-family: 'DM Sans',sans-serif; }
+        .g-nav-btn:hover { background: rgba(255,255,255,0.06); color: rgba(255,255,255,0.85); }
+        .g-nav-btn.active { background: rgba(0,150,199,0.14); color: #fff; }
+        .g-nav-btn.active::before { content: ''; position: absolute; left: 0; top: 50%; transform: translateY(-50%); width: 3px; height: 55%; background: #0096c7; border-radius: 0 3px 3px 0; }
+        .g-nav-emoji { font-size: 15px; flex-shrink: 0; }
+        .g-sidebar-footer { padding: 14px 10px 22px; border-top: 1px solid rgba(255,255,255,0.06); position: relative; z-index: 2; }
+        .g-logout { display: flex; align-items: center; gap: 10px; padding: 9px 10px; border-radius: 9px; cursor: pointer; transition: all 0.15s; color: rgba(255,100,100,0.55); font-size: 0.84rem; font-weight: 500; border: none; background: transparent; width: 100%; text-align: left; font-family: 'DM Sans',sans-serif; }
+        .g-logout:hover { background: rgba(255,80,80,0.1); color: #ff6b6b; }
+
+        /* ── CONTENU ── */
+        .g-main { flex: 1; overflow-y: auto; background: #0a0f1e; position: relative; }
+        .g-main-grad { position: absolute; top: 0; left: 0; right: 0; height: 260px; background: linear-gradient(180deg, rgba(0,100,170,0.3) 0%, transparent 100%); pointer-events: none; }
+        .g-content { position: relative; z-index: 2; padding: 38px 38px 60px; width: 100%; box-sizing: border-box; }
+
+        /* ── RESPONSIVE ── */
+        @media (max-width: 900px) {
+          .g-sidebar { width: 200px; min-width: 200px; }
+          .g-content { padding: 24px 20px 40px; }
+        }
+        @media (max-width: 640px) {
+          .g-sidebar { width: 56px; min-width: 56px; }
+          .g-logo-text, .g-logo-sub, .g-profile-name, .g-profile-role, .g-nav-label { display: none; }
+          .g-logo { padding: 16px 10px; justify-content: center; }
+          .g-profile { padding: 12px 10px; justify-content: center; }
+          .g-nav-btn { justify-content: center; padding: 10px; }
+          .g-nav-btn span:last-child { display: none; }
+          .g-logout span:last-child { display: none; }
+          .g-logout { justify-content: center; }
+          .g-content { padding: 20px 14px 40px; }
         }
 
-        .g-sidebar-logo {
-          padding: 28px 24px 20px;
-          display: flex;
-          align-items: center;
-          gap: 12px;
-          border-bottom: 1px solid rgba(255,255,255,0.06);
-          position: relative;
-          z-index: 2;
-        }
+        /* Hover sur card */
+        .g-card-hover:hover { background: rgba(255,255,255,0.07) !important; border-color: rgba(0,150,199,0.28) !important; transform: translateY(-3px); }
+        .g-tr:hover { background: rgba(255,255,255,0.04); }
 
-        .g-logo-icon {
-          width: 38px;
-          height: 38px;
-          border-radius: 10px;
-          background: linear-gradient(135deg, #0096c7, #0d47a1);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          font-size: 18px;
-          flex-shrink: 0;
-          box-shadow: 0 4px 16px rgba(0,150,199,0.4);
-        }
-
-        .g-logo-text {
-          font-family: 'Syne', sans-serif;
-          font-size: 1.1rem;
-          font-weight: 800;
-          background: linear-gradient(135deg, #fff, #90caf9);
-          -webkit-background-clip: text;
-          -webkit-text-fill-color: transparent;
-          letter-spacing: -0.02em;
-        }
-
-        .g-logo-sub {
-          font-size: 0.65rem;
-          color: rgba(255,255,255,0.35);
-          font-weight: 400;
-          letter-spacing: 0.08em;
-          text-transform: uppercase;
-        }
-
-        /* Profil gérant */
-        .g-profile {
-          padding: 20px 24px;
-          display: flex;
-          align-items: center;
-          gap: 12px;
-          border-bottom: 1px solid rgba(255,255,255,0.06);
-          position: relative;
-          z-index: 2;
-        }
-
-        .g-avatar {
-          width: 36px;
-          height: 36px;
-          border-radius: 50%;
-          background: linear-gradient(135deg, #0096c7, #48cae4);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          font-family: 'Syne', sans-serif;
-          font-weight: 700;
-          font-size: 0.9rem;
-          color: white;
-          flex-shrink: 0;
-          box-shadow: 0 0 0 2px rgba(0,150,199,0.3);
-        }
-
-        .g-profile-name {
-          font-size: 0.875rem;
-          font-weight: 600;
-          color: #e8eaf0;
-          line-height: 1.2;
-        }
-
-        .g-profile-role {
-          font-size: 0.7rem;
-          color: #48cae4;
-          font-weight: 500;
-          letter-spacing: 0.05em;
-        }
-
-        /* Navigation */
-        .g-nav {
-          flex: 1;
-          padding: 16px 12px;
-          display: flex;
-          flex-direction: column;
-          gap: 4px;
-          position: relative;
-          z-index: 2;
-          overflow-y: auto;
-        }
-
-        .g-nav-label {
-          font-size: 0.62rem;
-          font-weight: 600;
-          letter-spacing: 0.12em;
-          text-transform: uppercase;
-          color: rgba(255,255,255,0.25);
-          padding: 8px 12px 4px;
-        }
-
-        .g-nav-item {
-          display: flex;
-          align-items: center;
-          gap: 12px;
-          padding: 10px 12px;
-          border-radius: 10px;
-          cursor: pointer;
-          transition: all 0.18s ease;
-          color: rgba(255,255,255,0.5);
-          font-size: 0.875rem;
-          font-weight: 500;
-          border: none;
-          background: transparent;
-          width: 100%;
-          text-align: left;
-          position: relative;
-        }
-
-        .g-nav-item:hover {
-          background: rgba(255,255,255,0.06);
-          color: rgba(255,255,255,0.85);
-        }
-
-        /* Item actif — style Spotify avec barre et fond */
-        .g-nav-item.active {
-          background: rgba(0, 150, 199, 0.15);
-          color: #fff;
-        }
-
-        .g-nav-item.active::before {
-          content: '';
-          position: absolute;
-          left: 0;
-          top: 50%;
-          transform: translateY(-50%);
-          width: 3px;
-          height: 60%;
-          background: #0096c7;
-          border-radius: 0 3px 3px 0;
-        }
-
-        .g-nav-item.active svg {
-          color: #48cae4;
-        }
-
-        /* Bouton déconnexion en bas */
-        .g-sidebar-footer {
-          padding: 16px 12px 24px;
-          border-top: 1px solid rgba(255,255,255,0.06);
-          position: relative;
-          z-index: 2;
-        }
-
-        .g-logout-btn {
-          display: flex;
-          align-items: center;
-          gap: 12px;
-          padding: 10px 12px;
-          border-radius: 10px;
-          cursor: pointer;
-          transition: all 0.18s;
-          color: rgba(255,100,100,0.6);
-          font-size: 0.875rem;
-          font-weight: 500;
-          border: none;
-          background: transparent;
-          width: 100%;
-          text-align: left;
-        }
-
-        .g-logout-btn:hover {
-          background: rgba(255,80,80,0.1);
-          color: #ff6b6b;
-        }
-
-        /* ── CONTENU PRINCIPAL ── */
-        .g-main {
-          flex: 1;
-          overflow-y: auto;
-          background: #0a0f1e;
-          position: relative;
-        }
-
-        /* Dégradé en haut du contenu (comme Spotify) */
-        .g-main-header-bg {
-          position: absolute;
-          top: 0; left: 0; right: 0;
-          height: 280px;
-          background: linear-gradient(180deg, rgba(0,100,170,0.35) 0%, transparent 100%);
-          pointer-events: none;
-        }
-
-        .g-content {
-          position: relative;
-          z-index: 2;
-          padding: 40px 40px 60px;
-          max-width: 1100px;
-        }
-
-        .g-page-title {
-          font-family: 'Syne', sans-serif;
-          font-size: 2rem;
-          font-weight: 800;
-          color: #fff;
-          margin-bottom: 6px;
-          letter-spacing: -0.03em;
-        }
-
-        .g-page-sub {
-          font-size: 0.875rem;
-          color: rgba(255,255,255,0.4);
-          margin-bottom: 36px;
-        }
-
-        /* ── CARDS ACCUEIL ── */
-        .g-cards-grid {
-          display: grid;
-          grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-          gap: 16px;
-          margin-bottom: 40px;
-        }
-
-        .g-stat-card {
-          background: rgba(255,255,255,0.04);
-          border: 1px solid rgba(255,255,255,0.08);
-          border-radius: 16px;
-          padding: 24px;
-          transition: all 0.2s;
-          cursor: pointer;
-        }
-
-        .g-stat-card:hover {
-          background: rgba(255,255,255,0.07);
-          border-color: rgba(0,150,199,0.3);
-          transform: translateY(-3px);
-        }
-
-        .g-stat-icon {
-          width: 44px;
-          height: 44px;
-          border-radius: 12px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          margin-bottom: 16px;
-        }
-
-        .g-stat-icon.blue  { background: rgba(0,150,199,0.2);  color: #48cae4; }
-        .g-stat-icon.green { background: rgba(0,200,100,0.2);  color: #69e09c; }
-        .g-stat-icon.amber { background: rgba(255,180,0,0.2);  color: #fbbf24; }
-        .g-stat-icon.pink  { background: rgba(236,72,153,0.2); color: #f472b6; }
-
-        .g-stat-label {
-          font-size: 0.75rem;
-          font-weight: 600;
-          letter-spacing: 0.08em;
-          text-transform: uppercase;
-          color: rgba(255,255,255,0.35);
-          margin-bottom: 6px;
-        }
-
-        .g-stat-value {
-          font-family: 'Syne', sans-serif;
-          font-size: 1.6rem;
-          font-weight: 700;
-          color: #fff;
-        }
-
-        /* ── QUICK ACTIONS ── */
-        .g-section-title {
-          font-family: 'Syne', sans-serif;
-          font-size: 1.1rem;
-          font-weight: 700;
-          color: #fff;
-          margin-bottom: 16px;
-          display: flex;
-          align-items: center;
-          gap: 10px;
-        }
-
-        .g-actions-grid {
-          display: grid;
-          grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-          gap: 12px;
-        }
-
-        .g-action-card {
-          background: rgba(255,255,255,0.04);
-          border: 1px solid rgba(255,255,255,0.07);
-          border-radius: 14px;
-          padding: 20px;
-          cursor: pointer;
-          transition: all 0.2s;
-          display: flex;
-          align-items: center;
-          gap: 14px;
-        }
-
-        .g-action-card:hover {
-          background: rgba(0,150,199,0.12);
-          border-color: rgba(0,150,199,0.35);
-        }
-
-        .g-action-card:hover .g-chevron {
-          transform: translateX(4px);
-          color: #48cae4;
-        }
-
-        .g-action-icon {
-          width: 40px;
-          height: 40px;
-          border-radius: 10px;
-          background: rgba(0,150,199,0.15);
-          color: #48cae4;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          flex-shrink: 0;
-        }
-
-        .g-action-label {
-          font-size: 0.875rem;
-          font-weight: 600;
-          color: #e8eaf0;
-          flex: 1;
-        }
-
-        .g-chevron {
-          color: rgba(255,255,255,0.2);
-          transition: all 0.2s;
-        }
-
-        /* ── PLACEHOLDER pages ── */
-        .g-placeholder {
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          justify-content: center;
-          min-height: 300px;
-          text-align: center;
-          color: rgba(255,255,255,0.3);
-          gap: 16px;
-        }
-
-        .g-placeholder-icon {
-          width: 72px;
-          height: 72px;
-          border-radius: 20px;
-          background: rgba(255,255,255,0.05);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          color: rgba(255,255,255,0.15);
-        }
-
-        .g-placeholder h2 {
-          font-family: 'Syne', sans-serif;
-          font-size: 1.3rem;
-          font-weight: 700;
-          color: rgba(255,255,255,0.5);
-        }
-
-        .g-btn-primary {
-          display: inline-flex;
-          align-items: center;
-          gap: 8px;
-          padding: 10px 20px;
-          background: linear-gradient(135deg, #0096c7, #0d47a1);
-          color: white;
-          border: none;
-          border-radius: 10px;
-          font-size: 0.875rem;
-          font-weight: 600;
-          cursor: pointer;
-          transition: all 0.2s;
-          font-family: 'DM Sans', sans-serif;
-          box-shadow: 0 4px 16px rgba(0,150,199,0.3);
-        }
-
-        .g-btn-primary:hover {
-          transform: translateY(-2px);
-          box-shadow: 0 8px 24px rgba(0,150,199,0.4);
-        }
-
-        /* Scrollbar personnalisée */
-        .g-main::-webkit-scrollbar { width: 6px; }
-        .g-main::-webkit-scrollbar-track { background: transparent; }
-        .g-main::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 3px; }
-
-        .g-nav::-webkit-scrollbar { width: 4px; }
-        .g-nav::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 2px; }
+        /* Scrollbar */
+        .g-main::-webkit-scrollbar { width: 5px; }
+        .g-main::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.09); border-radius: 3px; }
+        .g-nav::-webkit-scrollbar { width: 3px; }
+        .g-nav::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.06); border-radius: 2px; }
       `}</style>
 
       <div className="g-shell">
 
-        {/* ══════════════════════════════
-            SIDEBAR — style Spotify
-        ══════════════════════════════ */}
+        {/* ══ SIDEBAR ══════════════════════════════ */}
         <aside className="g-sidebar">
 
-          {/* Logo */}
-          <div className="g-sidebar-logo">
+          <div className="g-logo">
             <div className="g-logo-icon">🏢</div>
             <div>
               <div className="g-logo-text">AzurImmo</div>
@@ -543,9 +550,8 @@ export default function GerantDashboard() {
             </div>
           </div>
 
-          {/* Profil */}
           <div className="g-profile">
-            {/* Avatar avec initiales */}
+            {/* Initiales du gérant dans l'avatar */}
             <div className="g-avatar">
               {gerant?.prenom?.[0]?.toUpperCase()}{gerant?.nom?.[0]?.toUpperCase()}
             </div>
@@ -555,165 +561,81 @@ export default function GerantDashboard() {
             </div>
           </div>
 
-          {/* Navigation */}
           <nav className="g-nav">
-            <div className="g-nav-label">Menu</div>
-
-            {/*
-              On boucle sur les items de navigation.
-              Pour chaque item, on vérifie si son id correspond à activePage
-              pour lui appliquer la classe "active".
-              Le onClick met à jour le state activePage → React re-rend la sidebar et le contenu.
-            */}
+            <div className="g-nav-label">Navigation</div>
             {navItems.map(item => (
               <button
                 key={item.id}
-                className={`g-nav-item ${activePage === item.id ? 'active' : ''}`}
-                onClick={() => setActivePage(item.id)}
+                className={`g-nav-btn ${activePage === item.id ? 'active' : ''}`}
+                onClick={() => handleNav(item.id)}
               >
-                {item.icon}
+                <span className="g-nav-emoji">{item.emoji}</span>
                 {item.label}
               </button>
             ))}
           </nav>
 
-          {/* Déconnexion */}
           <div className="g-sidebar-footer">
-            <button className="g-logout-btn" onClick={handleLogout}>
-              {Icons.logout}
+            <button className="g-logout" onClick={handleLogout}>
+              <span style={{ fontSize: 15 }}>🚪</span>
               Se déconnecter
             </button>
           </div>
         </aside>
 
-        {/* ══════════════════════════════
-            CONTENU PRINCIPAL
-        ══════════════════════════════ */}
+        {/* ══ CONTENU PRINCIPAL ════════════════════ */}
         <main className="g-main">
-          <div className="g-main-header-bg" />
-
+          <div className="g-main-grad" />
           <div className="g-content">
 
-            {/* ── PAGE ACCUEIL ── */}
+            {/* ── Page Accueil ── */}
             {activePage === 'accueil' && (
               <>
-                <h1 className="g-page-title">Bonjour, {gerant?.prenom} 👋</h1>
-                <p className="g-page-sub">Votre tableau de bord de gestion immobilière</p>
-
-                {/* Stats rapides */}
-                <div className="g-cards-grid">
-                  <div className="g-stat-card" onClick={() => setActivePage('batiments')}>
-                    <div className="g-stat-icon blue">{Icons.building}</div>
-                    <div className="g-stat-label">Bâtiments</div>
-                    <div className="g-stat-value">—</div>
-                  </div>
-                  <div className="g-stat-card" onClick={() => setActivePage('appartements')}>
-                    <div className="g-stat-icon green">{Icons.apt}</div>
-                    <div className="g-stat-label">Appartements</div>
-                    <div className="g-stat-value">—</div>
-                  </div>
-                  <div className="g-stat-card" onClick={() => setActivePage('contrats')}>
-                    <div className="g-stat-icon amber">{Icons.contract}</div>
-                    <div className="g-stat-label">Contrats</div>
-                    <div className="g-stat-value">—</div>
-                  </div>
-                  <div className="g-stat-card" onClick={() => setActivePage('interventions')}>
-                    <div className="g-stat-icon pink">{Icons.wrench}</div>
-                    <div className="g-stat-label">Interventions</div>
-                    <div className="g-stat-value">—</div>
-                  </div>
+                <div style={{ marginBottom: 36 }}>
+                  <h1 style={{ fontFamily: "'Syne',sans-serif", fontSize: '2.1rem', fontWeight: 800, color: '#fff', letterSpacing: '-0.03em', marginBottom: 4 }}>
+                    Bonjour, {gerant?.prenom} 👋
+                  </h1>
+                  <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.9rem' }}>Tableau de bord de gestion immobilière</p>
                 </div>
 
-                {/* Accès rapides */}
-                <div className="g-section-title">
-                  {Icons.eye}
-                  Accès rapides
-                </div>
-                <div className="g-actions-grid">
+                {/* Raccourcis vers chaque section */}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: 14, marginBottom: 36, width: '100%' }}>
                   {[
-                    { label: 'Gérer les bâtiments',    icon: Icons.building, page: 'batiments'     as Page },
-                    { label: 'Gérer les appartements', icon: Icons.apt,      page: 'appartements'  as Page },
-                    { label: 'Voir les contrats',      icon: Icons.contract, page: 'contrats'      as Page },
-                    { label: 'Voir les interventions', icon: Icons.wrench,   page: 'interventions' as Page },
-                  ].map(a => (
-                    <div key={a.label} className="g-action-card" onClick={() => setActivePage(a.page)}>
-                      <div className="g-action-icon">{a.icon}</div>
-                      <span className="g-action-label">{a.label}</span>
-                      <span className="g-chevron">{Icons.chevron}</span>
+                    { page: 'batiments'     as Page, emoji: '🏗️', label: 'Bâtiments',     color: 'rgba(0,150,199,0.2)',  tc: '#48cae4' },
+                    { page: 'appartements'  as Page, emoji: '🏡', label: 'Appartements',  color: 'rgba(105,224,156,0.2)', tc: '#69e09c' },
+                    { page: 'contrats'      as Page, emoji: '📄', label: 'Contrats',      color: 'rgba(251,191,36,0.2)',  tc: '#fbbf24' },
+                    { page: 'interventions' as Page, emoji: '🔧', label: 'Interventions', color: 'rgba(244,114,182,0.2)', tc: '#f472b6' },
+                  ].map(item => (
+                    <div
+                      key={item.page}
+                      className="g-card-hover"
+                      onClick={() => handleNav(item.page)}
+                      style={{
+                        ...styles.card, cursor: 'pointer',
+                        alignItems: 'center', textAlign: 'center', padding: '28px 20px',
+                      }}
+                    >
+                      <div style={{ fontSize: 32, marginBottom: 10 }}>{item.emoji}</div>
+                      <span style={{ fontFamily: "'Syne',sans-serif", fontWeight: 700, color: '#fff', fontSize: '0.95rem' }}>{item.label}</span>
+                      <span style={{ fontSize: '0.72rem', color: item.tc, marginTop: 4, fontWeight: 600 }}>Gérer →</span>
                     </div>
                   ))}
                 </div>
+
+                <p style={{ color: 'rgba(255,255,255,0.2)', fontSize: '0.8rem', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: 20 }}>
+                  Connecté en tant que <strong style={{ color: '#48cae4' }}>{gerant?.mail}</strong>
+                </p>
               </>
             )}
 
-            {/* ── PAGE APPARTEMENTS ── */}
-            {activePage === 'appartements' && (
-              <>
-                <h1 className="g-page-title">Appartements</h1>
-                <p className="g-page-sub">Gérez vos appartements</p>
-                {/*
-                  💡 ICI : tu peux remplacer ce placeholder par ton composant
-                  GerantAppartements existant, ou charger la liste depuis l'API.
-                  Exemple : <GerantAppartements />
-                */}
-                <div className="g-placeholder">
-                  <div className="g-placeholder-icon">{Icons.apt}</div>
-                  <h2>Liste des appartements</h2>
-                  <p>Intègre ici ton composant GerantAppartements</p>
-                  <button className="g-btn-primary" onClick={() => navigate('/gerant/appartements')}>
-                    Ouvrir la page complète
-                    {Icons.chevron}
-                  </button>
-                </div>
-              </>
-            )}
-
-            {/* ── PAGE BÂTIMENTS ── */}
-            {activePage === 'batiments' && (
-              <>
-                <h1 className="g-page-title">Bâtiments</h1>
-                <p className="g-page-sub">Gérez vos bâtiments</p>
-                <div className="g-placeholder">
-                  <div className="g-placeholder-icon">{Icons.building}</div>
-                  <h2>Liste des bâtiments</h2>
-                  <p>Intègre ici ton composant GerantBatiments</p>
-                  <button className="g-btn-primary" onClick={() => navigate('/gerant/batiments')}>
-                    Ouvrir la page complète
-                    {Icons.chevron}
-                  </button>
-                </div>
-              </>
-            )}
-
-            {/* ── PAGE CONTRATS ── */}
-            {activePage === 'contrats' && (
-              <>
-                <h1 className="g-page-title">Contrats</h1>
-                <p className="g-page-sub">Tous les contrats de location</p>
-                <div className="g-placeholder">
-                  <div className="g-placeholder-icon">{Icons.contract}</div>
-                  <h2>Liste des contrats</h2>
-                  <p>Intègre ici ton composant ContratPage</p>
-                </div>
-              </>
-            )}
-
-            {/* ── PAGE INTERVENTIONS ── */}
-            {activePage === 'interventions' && (
-              <>
-                <h1 className="g-page-title">Interventions</h1>
-                <p className="g-page-sub">Suivi des interventions techniques</p>
-                <div className="g-placeholder">
-                  <div className="g-placeholder-icon">{Icons.wrench}</div>
-                  <h2>Liste des interventions</h2>
-                  <p>Intègre ici ton composant InterventionPage</p>
-                </div>
-              </>
-            )}
+            {/* ── Pages dynamiques ── */}
+            {activePage === 'batiments'     && <PageBatiments onViewAppartements={handleViewAppartements} />}
+            {activePage === 'appartements'  && <PageAppartements batimentFiltre={batimentFiltre} />}
+            {activePage === 'contrats'      && <PageContrats />}
+            {activePage === 'interventions' && <PageInterventions />}
 
           </div>
         </main>
-
       </div>
     </>
   )

@@ -2,6 +2,7 @@ package bts.sio.azurimmo.service;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -21,6 +22,13 @@ public class ContratService {
         this.contratRepository = contratRepository;
     }
 
+    public List<ContratDTO> findAllDTO() {
+        return contratRepository.findAll()
+                .stream()
+                .map(ContratMapper::toDTO)
+                .collect(Collectors.toList());
+    }
+
     public ContratDTO saveContratDTO(ContratDTO dto) {
         Contrat entity = ContratMapper.toEntity(dto);
         Contrat saved = contratRepository.save(entity);
@@ -28,8 +36,7 @@ public class ContratService {
     }
 
     public Optional<ContratDTO> getContratDTO(Long id) {
-        return contratRepository.findById(id)
-                .map(ContratMapper::toDTO);
+        return contratRepository.findById(id).map(ContratMapper::toDTO);
     }
 
     public List<Contrat> findByAppartementId(Long appartementId) {
@@ -39,6 +46,7 @@ public class ContratService {
     public List<Contrat> findByLocataireId(Long locataireId) {
         return contratRepository.findByLocataireId(locataireId);
     }
+
     public List<Contrat> findByStatut(String statut) {
         return contratRepository.findByStatut(statut);
     }
