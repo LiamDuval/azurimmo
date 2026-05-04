@@ -34,7 +34,6 @@ export interface Intervention {
   description: string;
   adresse: string;
   ville: string;
-  dateIntervention?: string;
   heure: string;
   appartementId: number;
   typeInterventionId: number;

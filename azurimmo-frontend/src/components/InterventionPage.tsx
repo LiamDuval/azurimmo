@@ -1,37 +1,26 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import type { Intervention } from "../types";
 import "./InterventionPage.css";
- 
+
 const API_BASE = import.meta.env.VITE_API_BASE;
- 
-interface Intervention {
-  id: number;
-  libelle: string;
-  description: string;
-  dateEtHeure: string;
-}
- 
-interface InterventionPageProps {
-  appartementId?: number;
-  onBack: () => void;
-}
- 
-const InterventionPage: React.FC<InterventionPageProps> = ({
-  appartementId = 1,
-}) => {
+
+export default function InterventionPage() {
+  const { id } = useParams();
+  const navigate = useNavigate();
+  const appartementId = Number(id);
+
   const [interventions, setInterventions] = useState<Intervention[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
- 
+
   useEffect(() => {
     setLoading(true);
     setError(null);
- 
     fetch(`${API_BASE}/interventions/appartement/${appartementId}`)
-      .then((response) => {
-        if (!response.ok) {
-          throw new Error(`Erreur HTTP : ${response.status}`);
-        }
-        return response.json();
+      .then((res) => {
+        if (!res.ok) throw new Error(`Erreur HTTP : ${res.status}`);
+        return res.json();
       })
       .then((data: Intervention[]) => {
         setInterventions(data);
@@ -40,42 +29,28 @@ const InterventionPage: React.FC<InterventionPageProps> = ({
       .catch((err: Error) => {
         setError(err.message);
         setLoading(false);
-        setInterventions([
-          { id: 1, libelle: "Plomberie", description: "Fuite robinet salle de bain", dateEtHeure: "2026-03-24 09:00" },
-          { id: 2, libelle: "Électricité", description: "Remplacement tableau électrique", dateEtHeure: "2026-03-25 14:30" },
-          { id: 3, libelle: "Peinture", description: "Rafraîchissement couloir entrée", dateEtHeure: "2026-03-26 08:00" },
-          { id: 4, libelle: "Serrurerie", description: "Changement de serrure porte principale", dateEtHeure: "2026-03-27 11:15" },
-        ]);
       });
   }, [appartementId]);
+
   return (
     <div className="page-wrapper">
-
-
       <header className="header-wave">
-
-        <svg
-          className="wave-svg"
-          viewBox="0 0 1440 80"
-          preserveAspectRatio="none"
-          xmlns="http://www.w3.org/2000/svg"
-        >
-          <path
-            d="M0,40 C360,80 1080,0 1440,40 L1440,80 L0,80 Z"
-            fill="white"
-          />
+        <svg className="wave-svg" viewBox="0 0 1440 80" preserveAspectRatio="none">
+          <path d="M0,40 C360,80 1080,0 1440,40 L1440,80 L0,80 Z" fill="white" />
         </svg>
-
-
         <div className="header-badges">
-          <div className="badge badge-title">Intervention</div>
-          <div className="badge badge-id">&#123; AppartementId &#125;</div>
+          <button
+            className="btn-back-int"
+            onClick={() => navigate(`/appartements/${appartementId}`)}
+          >
+            ← Retour à l'appartement
+          </button>
+          <div className="badge badge-title">Interventions</div>
+          <div className="badge badge-id">Appartement n°{appartementId}</div>
         </div>
       </header>
 
-
       <main className="main-content">
-
         {loading && (
           <div className="status-message loading">
             <span className="spinner" />
@@ -83,36 +58,43 @@ const InterventionPage: React.FC<InterventionPageProps> = ({
           </div>
         )}
 
-        {error && !loading && (
+        {!loading && error && (
           <div className="status-message error">
-            ⚠ Connexion API impossible — données de démonstration affichées.
+            ⚠ {error}
           </div>
         )}
 
-        {!loading && (
+        {!loading && !error && (
           <div className="table-container">
             <table className="intervention-table">
               <thead>
                 <tr>
-                  <th>libelle</th>
+                  <th>Type</th>
                   <th>Description</th>
-                  <th>Date et heure</th>
+                  <th>Adresse</th>
+                  <th>Heure</th>
                 </tr>
               </thead>
               <tbody>
-
                 {interventions.map((intervention) => (
                   <tr key={intervention.id}>
-                    <td>{intervention.libelle}</td>
-                    <td>{intervention.description}</td>
-                    <td>{intervention.dateEtHeure}</td>
+                    <td>{intervention.libelle || "—"}</td>
+                    <td>{intervention.description || "—"}</td>
+                    <td>
+                      {[intervention.adresse, intervention.ville]
+                        .filter(Boolean)
+                        .join(", ") || "—"}
+                    </td>
+                    <td>
+                      {intervention.heure
+                        ? String(intervention.heure).slice(0, 5)
+                        : "—"}
+                    </td>
                   </tr>
                 ))}
-
-
                 {interventions.length === 0 && (
                   <tr>
-                    <td colSpan={3} className="empty-row">
+                    <td colSpan={4} className="empty-row">
                       Aucune intervention trouvée.
                     </td>
                   </tr>
@@ -124,6 +106,4 @@ const InterventionPage: React.FC<InterventionPageProps> = ({
       </main>
     </div>
   );
-};
-
-export default InterventionPage;
+}

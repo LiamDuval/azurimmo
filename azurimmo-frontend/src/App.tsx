@@ -1,6 +1,8 @@
 import { Routes, Route, Navigate } from 'react-router-dom'
 import ListAppartement from './components/ListAppartement'
 import AppartementDetail from './components/AppartementDetail'
+import InterventionPage from './components/InterventionPage'
+import ContratPage from './components/ContratPage'
 import LoginPage from './pages/LoginPage'
 import GerantDashboard from './pages/GerantDashboard'
 import GerantBatiments from './pages/GerantBatiments'
@@ -13,6 +15,8 @@ function App() {
     <Routes>
       <Route path="/" element={<ListAppartement onSelectAppartement={() => {}} />} />
       <Route path="/appartements/:id" element={<AppartementDetail />} />
+      <Route path="/appartements/:id/interventions" element={<InterventionPage />} />
+      <Route path="/appartements/:id/contrats" element={<ContratPage />} />
 
       <Route path="/login" element={<LoginPage />} />
 
