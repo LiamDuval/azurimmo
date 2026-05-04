@@ -219,9 +219,6 @@ function PageInterventions() {
               <h3 style={styles.cardTitle}>{inv.libelle || 'Intervention'}</h3>
               <p style={styles.cardSub}>{inv.description}</p>
               <div style={{ display: 'flex', gap: 12, marginTop: 12, flexWrap: 'wrap' }}>
-                {inv.dateIntervention && (
-                  <span style={styles.chip}>📅 {new Date(inv.dateIntervention).toLocaleDateString('fr-FR')}</span>
-                )}
                 {inv.heure && (
                   <span style={styles.chip}>🕐 {String(inv.heure).slice(0, 5)}</span>
                 )}

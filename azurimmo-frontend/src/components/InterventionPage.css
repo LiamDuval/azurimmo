@@ -104,7 +104,7 @@ body {
   color: var(--white);
 }
 
-
+.badge-id {
   background-color: var(--blue-light);
   color: var(--white);
   font-family: 'Courier New', monospace;

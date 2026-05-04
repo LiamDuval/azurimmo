@@ -1,26 +1,26 @@
 package bts.sio.azurimmo.service;
 
-import java.util.List;
-import java.util.Optional;
-
-import org.springframework.stereotype.Service;
-
 import bts.sio.azurimmo.model.Appartement;
 import bts.sio.azurimmo.model.dto.AppartementDTO;
 import bts.sio.azurimmo.model.mapper.AppartementMapper;
 import bts.sio.azurimmo.repository.AppartementRepository;
-import lombok.Data;
+import java.util.List;
+import java.util.Optional;
+import lombok.RequiredArgsConstructor; // ← on change l'import aussi
+import org.springframework.stereotype.Service;
 
-@Data
+@RequiredArgsConstructor // ← remplace @Data
 @Service
 public class AppartementService {
 
     private final AppartementRepository appartementRepository;
 
+    // "final" = Spring DOIT injecter ce champ via le constructeur généré par Lombok
+
     public Appartement saveAppartement(Appartement appartement) {
         return appartementRepository.save(appartement);
     }
-    
+
     public List<Appartement> findAll() {
         return appartementRepository.findAll();
     }
@@ -32,8 +32,7 @@ public class AppartementService {
     }
 
     public Optional<AppartementDTO> getAppartementDTO(Long id) {
-        return appartementRepository.findById(id)
-                .map(AppartementMapper::toDTO);
+        return appartementRepository.findById(id).map(AppartementMapper::toDTO);
     }
 
     public List<Appartement> findByVille(String ville) {
