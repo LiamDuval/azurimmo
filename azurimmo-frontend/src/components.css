@@ -376,7 +376,7 @@
 ========================================= */
 .grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(300px, 100%), 1fr));
   gap: 24px;
 }
 
@@ -539,6 +539,10 @@
 /* =========================================
    RESPONSIVE
 ========================================= */
+@media (max-width: 900px) {
+  .grid { grid-template-columns: repeat(2, 1fr); }
+}
+
 @media (max-width: 640px) {
   .hero { padding: 60px 20px 80px; }
 
